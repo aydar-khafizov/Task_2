@@ -11,21 +11,21 @@ def api_client():
 
 
 @pytest.fixture
-def registered_user():
+def registered_user(api_client):
     """
-    Создаёт уникального пользователя и удаляет его после теста.
+    Создаёт уникального пользователя через API и удаляет его после теста.
     Возвращает словарь с данными пользователя и токеном.
     """
-    client = ApiClient()
     email = generate_random_email()
     password = generate_random_string()
     name = generate_random_string()
 
-    response = client.register_user(email, password, name)
+    response = api_client.register_user(email, password, name)
     assert response.status_code == 200, (
         f"Не удалось создать пользователя в фикстуре: {response.text}"
     )
-    token = response.json()["accessToken"]
+    data = response.json()
+    token = data["accessToken"]
 
     yield {
         "email": email,
@@ -46,3 +46,30 @@ def authorized_client(registered_user):
     client = ApiClient()
     client.set_token(registered_user["token"])
     return client
+
+
+@pytest.fixture
+def valid_ingredient_ids(api_client):
+    """Возвращает список валидных ID ингредиентов для создания заказа."""
+    response = api_client.get_ingredients()
+    assert response.status_code == 200, "Не удалось получить список ингредиентов"
+    return [item["_id"] for item in response.json()["data"][:2]]
+
+
+@pytest.fixture
+def cleanup_user():
+    """
+    Гарантированно удаляет созданных в тесте пользователей после его завершения.
+    Работает даже если тест упал на assert.
+    """
+    tokens = []
+
+    def add_token(token):
+        tokens.append(token)
+
+    yield add_token
+
+    for token in tokens:
+        client = ApiClient()
+        client.set_token(token)
+        client.delete_user()

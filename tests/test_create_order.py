@@ -1,25 +1,15 @@
 import allure
 
 from constants import ERROR_NO_INGREDIENTS
-from utils.api_client import ApiClient
 
 
 @allure.feature("Заказы")
 @allure.story("Создание заказа")
 class TestCreateOrder:
 
-    def _get_ingredient_ids(self, count=2):
-        """Возвращает список валидных ID ингредиентов."""
-        client = ApiClient()
-        response = client.get_ingredients()
-        assert response.status_code == 200
-        return [item["_id"] for item in response.json()["data"][:count]]
-
     @allure.title("Создание заказа с авторизацией и ингредиентами")
-    def test_create_order_with_auth_and_ingredients(self, authorized_client):
-        ingredient_ids = self._get_ingredient_ids()
-
-        response = authorized_client.create_order(ingredient_ids)
+    def test_create_order_with_auth_and_ingredients(self, authorized_client, valid_ingredient_ids):
+        response = authorized_client.create_order(valid_ingredient_ids)
 
         assert response.status_code == 200
         body = response.json()
@@ -43,10 +33,8 @@ class TestCreateOrder:
         assert response.status_code == 500
 
     @allure.title("Создание заказа без авторизации с ингредиентами")
-    def test_create_order_without_auth_with_ingredients(self, api_client):
-        ingredient_ids = self._get_ingredient_ids()
-
-        response = api_client.create_order(ingredient_ids)
+    def test_create_order_without_auth_with_ingredients(self, api_client, valid_ingredient_ids):
+        response = api_client.create_order(valid_ingredient_ids)
 
         assert response.status_code == 200
         body = response.json()
