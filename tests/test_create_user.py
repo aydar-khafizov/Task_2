@@ -18,10 +18,10 @@ class TestCreateUser:
         response = api_client.register_user(email, password, name)
         body = response.json()
 
-        if "accessToken" in body:
-            cleanup_user(body["accessToken"])
+        assert response.status_code == 200, f"Не удалось создать пользователя: {body}"
 
-        assert response.status_code == 200
+        cleanup_user(body["accessToken"])
+
         assert body["success"] is True
         assert "accessToken" in body
         assert "refreshToken" in body

@@ -21,9 +21,10 @@ def registered_user(api_client):
     name = generate_random_string()
 
     response = api_client.register_user(email, password, name)
-    assert response.status_code == 200, (
-        f"Не удалось создать пользователя в фикстуре: {response.text}"
-    )
+
+    if response.status_code != 200:
+        pytest.fail(f"Не удалось создать пользователя в фикстуре. Ошибка API: {response.text}")
+
     data = response.json()
     token = data["accessToken"]
 
@@ -34,7 +35,6 @@ def registered_user(api_client):
         "token": token,
     }
 
-    # Cleanup: удаление пользователя после теста
     cleanup_client = ApiClient()
     cleanup_client.set_token(token)
     cleanup_client.delete_user()
@@ -52,7 +52,10 @@ def authorized_client(registered_user):
 def valid_ingredient_ids(api_client):
     """Возвращает список валидных ID ингредиентов для создания заказа."""
     response = api_client.get_ingredients()
-    assert response.status_code == 200, "Не удалось получить список ингредиентов"
+
+    if response.status_code != 200:
+        pytest.fail(f"Не удалось получить список ингредиентов. Ошибка API: {response.text}")
+
     return [item["_id"] for item in response.json()["data"][:2]]
 
 
